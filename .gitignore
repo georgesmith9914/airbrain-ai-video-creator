@@ -7,3 +7,4 @@ audio.mp4
 text-video.ipynb
 video.mp4
 .env
+__pycache__/

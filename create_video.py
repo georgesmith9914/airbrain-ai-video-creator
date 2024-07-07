@@ -4,6 +4,7 @@ import os
 
 import openai
 
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -311,6 +312,7 @@ def stitch_video(image_phrases, max_number_of_phrases, filename):
 
     create_video(images, audio, output)
     print("Video created.....")
+    return output
 
 def main():
     print("Step 1: Generate the content")
