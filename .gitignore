@@ -8,3 +8,4 @@ text-video.ipynb
 video.mp4
 .env
 __pycache__/
+videoenv/

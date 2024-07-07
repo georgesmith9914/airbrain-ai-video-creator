@@ -15,6 +15,7 @@ import openai
 from openai import AzureOpenAI
 from moviepy.editor import *
 
+
 def generate_content(topic, num_of_sentences):
     openai.api_type = os.getenv("OPENAI_API_TYPE")
     openai.api_base = os.getenv("OPENAI_API_BASE")
@@ -24,11 +25,15 @@ def generate_content(topic, num_of_sentences):
     prompt = 'Summarize the key points about '+ topic + " in " + str(num_of_sentences) +' lines.' 
     print(prompt)
 
-    client = AzureOpenAI(
-        api_key=openai.api_key,
-        azure_endpoint=os.getenv("OPENAI_API_BASE"),
-        api_version=os.getenv("OPENAI_API_VERSION")
-    )
+    client = None
+    if(os.getenv("OPENAI_API_TYPE") == "azure"):
+        client = AzureOpenAI(
+            api_key=openai.api_key,
+            azure_endpoint=os.getenv("OPENAI_API_BASE"),
+            api_version=os.getenv("OPENAI_API_VERSION")
+        )
+    else:
+        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY"))
 
     deployment_name=os.getenv("MODEL_DEPLOYMENT_NAME")
     completion = client.chat.completions.create(
@@ -49,14 +54,17 @@ def summarize_content(content, num_of_sentences):
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-    prompt = 'Provide a summary of the text below that captures its main idea in '+ str(num_of_sentences) +' sentences. Tell this in a conversational way that is easy to understand for a general audience. It should energize the audience. \n' + content 
+    prompt = 'Provide a summary of the text below that captures its main idea in '+ str(num_of_sentences) +' sentences. Tell this in an engaging, energetic, conversational way. \n' + content + '\n Imagine you’re inspiring people abbout the essence of this text. Your mission? Condense it into a punchy, five-sentence summary. Picture the audience leaning in, eyes wide, waiting for your verbal magic. Ready? Lights, camera, summary! Use mark of exclamations as needed!”.'
     print(prompt)
 
-    client = AzureOpenAI(
-        api_key=openai.api_key,
-        azure_endpoint=os.getenv("OPENAI_API_BASE"),
-        api_version=os.getenv("OPENAI_API_VERSION")
-    )
+    if(os.getenv("OPENAI_API_TYPE") == "azure"):
+        client = AzureOpenAI(
+            api_key=openai.api_key,
+            azure_endpoint=os.getenv("OPENAI_API_BASE"),
+            api_version=os.getenv("OPENAI_API_VERSION")
+        )
+    else:
+        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY"))
 
     deployment_name=os.getenv("MODEL_DEPLOYMENT_NAME")
     completion = client.chat.completions.create(
@@ -146,12 +154,16 @@ def get_image_phrases():
 
     import openai
     from openai import AzureOpenAI
-    client = AzureOpenAI(
-        api_key = openai.api_key,
-        azure_endpoint = os.getenv("OPENAI_API_BASE"),
-        api_version = os.getenv("OPENAI_API_VERSION")
-        
-    )
+
+    if(os.getenv("OPENAI_API_TYPE") == "azure"):
+        client = AzureOpenAI(
+            api_key=openai.api_key,
+            azure_endpoint=os.getenv("OPENAI_API_BASE"),
+            api_version=os.getenv("OPENAI_API_VERSION")
+        )
+    else:
+        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY"))
+
     deployment_name=os.getenv("MODEL_DEPLOYMENT_NAME")
     # Assuming 'openai.api_key' is set elsewhere in your code or environment variables
     completion = client.chat.completions.create(
@@ -195,11 +207,16 @@ def generate_images(image_phrases, max_number_of_phrases):
     print(os.getenv("IMAGE_MODEL_API_ENDPOINT"))
     # Assuming 'url' and 'headers' are defined above this snippet
     images = []  # Ensure this is defined if you're collecting results
-    client = AzureOpenAI(
-        api_version=os.getenv("IMAGE_MODEL_API_VERSION"),  
-        api_key=os.getenv("OPENAI_API_KEY"),  
-        azure_endpoint=os.getenv("IMAGE_MODEL_API_ENDPOINT")   
-    )
+
+    if(os.getenv("OPENAI_API_TYPE") == "azure"):
+        client = AzureOpenAI(
+            api_key=openai.api_key,
+            azure_endpoint=os.getenv("OPENAI_API_BASE"),
+            api_version=os.getenv("OPENAI_API_VERSION")
+        )
+    else:
+        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY"))
+
     deployment_name = os.getenv("IMAGE_MODEL_DEPLOYMENT_NAME")
     imgCount = 0
 
@@ -209,11 +226,18 @@ def generate_images(image_phrases, max_number_of_phrases):
                 break
             print(f"Generating image for phrase: {phrase}")
             if phrase != "":
-                result = client.images.generate(
+                result = None
+                if(os.getenv("OPENAI_API_TYPE") == "azure"):
+                    result = client.images.generate(
                     model=os.getenv("IMAGE_MODEL_NAME"),  # the name of your DALL-E 3 deployment
                     prompt=phrase,
                     n=1
                 )
+                else:
+                    result = client.images.generate(
+                        prompt=phrase,
+                        n=1
+                    )
 
                 json_response = json.loads(result.model_dump_json())
 
@@ -281,8 +305,8 @@ def create_video(images, audio, output):
 
     print("Creating the video.....")
 
-
-    clips = [ImageClip(m).resize(height=1024).set_duration(5) for m in images]
+    imageDurationSeconds = 8
+    clips = [ImageClip(m).resize(height=1024).set_duration(8) for m in images]
 
     print(clips)
 
@@ -316,7 +340,7 @@ def stitch_video(image_phrases, max_number_of_phrases, filename):
 
 def main():
     print("Step 1: Generate the content")
-    content = generate_content("Healthy Eating", 5)
+    content = generate_content("Reiki Healing", 5)
     print("Content:", content)
 
     print("Step 2: Summarize the content")
@@ -333,7 +357,7 @@ def main():
     print("Phrases:", phrases)
 
     print("Step 4: Generate images")
-    max_number_of_phrases = 4
+    max_number_of_phrases = 5
     generate_images(phrase_list, max_number_of_phrases)
     print("Images generated.....")
 
