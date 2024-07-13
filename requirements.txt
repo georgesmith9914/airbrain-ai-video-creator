@@ -1,0 +1,7 @@
+openai
+python-dotenv 
+moviepy
+azure.ai.textanalytics
+azure.core
+azure-cognitiveservices-speech
+PIL
