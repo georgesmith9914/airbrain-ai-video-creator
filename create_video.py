@@ -34,15 +34,11 @@ def generate_content(topic, num_of_sentences):
     prompt = 'Summarize the key points about '+ topic + " in " + str(num_of_sentences) +' lines.' 
     print(prompt)
 
-    client = None
-    if(os.getenv("OPENAI_API_TYPE") == "azure"):
-        client = AzureOpenAI(
-            api_key=openai.api_key,
-            azure_endpoint=os.getenv("OPENAI_API_BASE"),
-            api_version=os.getenv("OPENAI_API_VERSION")
-        )
-    else:
-        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY"))
+    client = AzureOpenAI(
+        api_key=openai.api_key,
+        azure_endpoint=os.getenv("OPENAI_API_BASE"),
+        api_version=os.getenv("OPENAI_API_VERSION")
+    )
 
     deployment_name=os.getenv("MODEL_DEPLOYMENT_NAME")
     completion = client.chat.completions.create(
@@ -63,17 +59,14 @@ def summarize_content(content, num_of_sentences):
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
-    prompt = 'Provide a summary of the text below that captures its main idea in '+ str(num_of_sentences) +' sentences. Tell this in an engaging, energetic, conversational way. \n' + content + '\n Imagine you’re inspiring people abbout the essence of this text. Your mission? Condense it into a punchy, five-sentence summary. Picture the audience leaning in, eyes wide, waiting for your verbal magic. Ready? Lights, camera, summary! Use mark of exclamations as needed!”.'
+    prompt = 'Provide a summary of the text below that captures its main idea in '+ str(num_of_sentences) +' sentences. Tell this in a conversational way that is easy to understand for a general audience. It should energize the audience. \n' + content 
     print(prompt)
 
-    if(os.getenv("OPENAI_API_TYPE") == "azure"):
-        client = AzureOpenAI(
-            api_key=openai.api_key,
-            azure_endpoint=os.getenv("OPENAI_API_BASE"),
-            api_version=os.getenv("OPENAI_API_VERSION")
-        )
-    else:
-        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY"))
+    client = AzureOpenAI(
+        api_key=openai.api_key,
+        azure_endpoint=os.getenv("OPENAI_API_BASE"),
+        api_version=os.getenv("OPENAI_API_VERSION")
+    )
 
     deployment_name=os.getenv("MODEL_DEPLOYMENT_NAME")
     completion = client.chat.completions.create(
@@ -163,16 +156,12 @@ def get_image_phrases():
 
     import openai
     from openai import AzureOpenAI
-
-    if(os.getenv("OPENAI_API_TYPE") == "azure"):
-        client = AzureOpenAI(
-            api_key=openai.api_key,
-            azure_endpoint=os.getenv("OPENAI_API_BASE"),
-            api_version=os.getenv("OPENAI_API_VERSION")
-        )
-    else:
-        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY"))
-
+    client = AzureOpenAI(
+        api_key = openai.api_key,
+        azure_endpoint = os.getenv("OPENAI_API_BASE"),
+        api_version = os.getenv("OPENAI_API_VERSION")
+        
+    )
     deployment_name=os.getenv("MODEL_DEPLOYMENT_NAME")
     # Assuming 'openai.api_key' is set elsewhere in your code or environment variables
     completion = client.chat.completions.create(
@@ -321,16 +310,11 @@ def generate_images(image_phrases, max_number_of_phrases):
     print(os.getenv("IMAGE_MODEL_API_ENDPOINT"))
     # Assuming 'url' and 'headers' are defined above this snippet
     images = []  # Ensure this is defined if you're collecting results
-
-    if(os.getenv("OPENAI_API_TYPE") == "azure"):
-        client = AzureOpenAI(
-            api_key=openai.api_key,
-            azure_endpoint=os.getenv("OPENAI_API_BASE"),
-            api_version=os.getenv("OPENAI_API_VERSION")
-        )
-    else:
-        client = openai.Client(api_key=os.getenv("OPENAI_API_KEY"))
-
+    client = AzureOpenAI(
+        api_version=os.getenv("IMAGE_MODEL_API_VERSION"),  
+        api_key=os.getenv("OPENAI_API_KEY"),  
+        azure_endpoint=os.getenv("IMAGE_MODEL_API_ENDPOINT")   
+    )
     deployment_name = os.getenv("IMAGE_MODEL_DEPLOYMENT_NAME")
     imgCount = 0
 
@@ -340,18 +324,11 @@ def generate_images(image_phrases, max_number_of_phrases):
                 break
             print(f"Generating image for phrase: {phrase}")
             if phrase != "":
-                result = None
-                if(os.getenv("OPENAI_API_TYPE") == "azure"):
-                    result = client.images.generate(
+                result = client.images.generate(
                     model=os.getenv("IMAGE_MODEL_NAME"),  # the name of your DALL-E 3 deployment
                     prompt=phrase,
                     n=1
                 )
-                else:
-                    result = client.images.generate(
-                        prompt=phrase,
-                        n=1
-                    )
 
                 json_response = json.loads(result.model_dump_json())
 
@@ -431,22 +408,93 @@ def Zoom(clip,mode='in',position='center',speed=1):
         return frame
     return clip.fl(main)
 
-def create_video(images, audio, output, image_phrases):
+def divide_text_into_parts(text, num_parts=10):
+    # Split the text into words
+    words = text.split()
+    
+    # Calculate the number of words per part
+    words_per_part = len(words) / num_parts
+    
+    # Initialize variables to hold the current count and the result
+    current_count = 0
+    parts = []
+    current_part = []
+    
+    # Iterate over the words and divide them into parts
+    for word in words:
+        current_part.append(word)
+        current_count += 1
+        
+        # Check if the current part has reached the approximate size
+        if current_count >= words_per_part:
+            parts.append(' '.join(current_part))
+            current_part = []
+            current_count = 0
+    
+    # Add the last part if there are any remaining words
+    if current_part:
+        parts.append(' '.join(current_part))
+    
+    # Adjust the last parts if there are fewer than num_parts due to rounding
+    while len(parts) < num_parts:
+        parts.append("")
+    
+    return parts
+
+def create_video(images, audio, output, image_phrases, summary):
     from PIL import Image
     from PIL import Image as pil
     from pkg_resources import parse_version
 
     if parse_version(pil.__version__)>=parse_version('10.0.0'):
         Image.ANTIALIAS=Image.LANCZOS
-
+    import textwrap
 
 
     print("Creating the video.....")
 
 
-    clips = [ImageClip(m).resize(height=1024).set_duration(5) for m in images]
+    #clips = [ImageClip(m).resize(height=1024).set_duration(5) for m in images]
+    #clips = [Zoom(clip=ImageClip(m).resize(height=1024).set_duration(4).set_fps(30), mode='in', position='center', speed=1.2) for m in images]    
+    #clips = [Zoom(clip=ImageClip(m).resize(height=1024).set_duration(4).set_fps(30), mode='in' if i % 2 == 0 else 'out', position='center', speed=1.2) for i, m in enumerate(images)]
+    #print(clips)
 
-    print(clips)
+    # Assuming 'texts' is a list of text strings corresponding to each image in 'images'
+    clips = []
+    #texts = image_phrases
+    texts = divide_text_into_parts(summary, len(images)-1)
+    print(texts)
+    for i, (m, text) in enumerate(zip(images, texts)):
+        # Create an image clip
+        img_clip = ImageClip(m).resize(height=1024).set_duration(3).set_fps(30)
+        
+        # Create a text clip (customize as needed)
+        #txt_clip = TextClip(text, fontsize=70, color='white', font="Amiri-Bold", align='center').set_position('center').set_duration(4)
+        # Enhanced text clip with shadow for better readability and animated fade-in
+        #txt_clip = TextClip(text, fontsize=70, color='white', font="Arial-Bold", align='center').set_position(('center', 'bottom')).set_duration(4).margin(bottom=20, opacity=0)  # Add some bottom margin
+        
+        # Wrap text to a list of lines, where each line has up to 40 characters
+        wrapped_text_lines = textwrap.wrap(text, width=40)
+        # Join the list of lines into a single string with newline characters
+        wrapped_text = "\n".join(wrapped_text_lines)
+
+        # Create a more attractive text clip
+        txt_clip = (TextClip(wrapped_text, fontsize=40, color='white', font="Roboto-Condensed", align='center', stroke_color='black', stroke_width=2)
+                    .set_position(('center', 'center'))
+                    .set_duration(2)
+                    .margin(bottom=20, opacity=0)  # Add some bottom margin
+                    .fadein(1)  # Apply fade-in effect for 1 second at the start
+                    .fadeout(1))  # Apply fade-out effect for 1 second at the end
+                    #.set_shadow(color='gray', offset=(1,1), transparency=0.7))  # Add a soft shadow for a nicer look
+        # Overlay the text on the image
+        video_clip = CompositeVideoClip([img_clip, txt_clip])
+        # Apply fade-in effect to the entire composite clip
+        final_clip_with_fadein = video_clip.crossfadein(1)
+        # Apply the Zoom effect with alternating mode
+        #final_clip = Zoom(clip=video_clip, mode='in' if i % 2 == 0 else 'out', position='center', speed=1.2)
+        final_clip = Zoom(clip=final_clip_with_fadein, mode='in' if i % 2 == 0 else 'out', position='center', speed=1.2)
+        
+        clips.append(final_clip)
 
     concat_clip = concatenate_videoclips(clips, method="compose")
 
@@ -460,7 +508,7 @@ def create_video(images, audio, output, image_phrases):
 
     final_clip.write_videofile(output, fps=24)
 
-def stitch_video(image_phrases, max_number_of_phrases, filename):
+def stitch_video(image_phrases, max_number_of_phrases, filename, summary):
     print(max_number_of_phrases)
 
     images = [f"images/{index}-generated_image.png" for index, _ in enumerate(image_phrases) if index < max_number_of_phrases]
@@ -472,45 +520,47 @@ def stitch_video(image_phrases, max_number_of_phrases, filename):
 
     output = "video.mp4"
 
-    create_video(images, audio, output, image_phrases)
+    create_video(images, audio, output, image_phrases, summary)
     print("Video created.....")
     return output
 
 def main():
     print("Step 1: Generate the content")
-    content = generate_content("Healthy Eating", 5)
+    content = ""
+    #Topics: Question, Books, Movies, Music, Health, Technology, Science, History, Art, Food, Travel, Research papers
+    #content = generate_content("Importance of sleep", 5)
     print("Content:", content)
 
     print("Step 2: Summarize the content")
     num_of_sentences = 3
-    summary = ""
-    summary = summarize_content(content, num_of_sentences)
+    summary = "Hey there! You won't believe how amazing sleep can be for us. It's like a superhero, keeping our heart, blood vessels, and brain in tip-top shape, and even helping us maintain a healthy weight. But beware, if we skimp on it, it can cause stress and anxiety, reduce our productivity and even put our safety at risk! So, let's make sure we're getting the sleep we need to stay on top of our game."
+    #summary = summarize_content(content, num_of_sentences)
     print("Summary:", summary)
 
     print("Step 3: Extract key phrases")
-    phrase_list = ['super healthy lifestyle', 'healthy eating', 'tasty fruits', 'good fats', 'chronic diseases', 'overall health', 'real boost', 'regular exercise', 'diverse diet', 'veggies']
+    phrase_list = ['Manokamana Siddhi', 'fascinating concept', 'Hindu spirituality', 'personal wishes', 'sincere worship', 'spiritual pr actices', 'mantra chanting', 'beautiful belief', 'little bit', 'divine grace', 'selfless desires', 'fulfillment', 'meditation', 'fa ith', 'self-improvement', 'pursuit', 'positive', 'principles', 'Karma', 'mind', 'reality']
     phrases = ""
-    phrase_list, phrases = extract_key_phrases(summary)
+    #phrase_list, phrases = extract_key_phrases(summary)
     print("Key Phrases:", phrase_list)
     print("Phrases:", phrases)
 
-    print("Step 4: Generate images")
-    max_number_of_phrases = 4
-    generate_images(phrase_list, max_number_of_phrases)
+    print("Step 4a: Generate images")
+    max_number_of_phrases = 11
+    #generate_images(phrase_list, max_number_of_phrases)
     print("Images generated.....")
 
     print("Step 4b: Fetch and Prepare images")
-    max_number_of_phrases = 8
+    max_number_of_phrases = 11
     #fetch_and_prepare_images(phrases, max_number_of_phrases)
     print("Images prepared.....")
 
     print("Step 5: Generate audio")
-    generate_audio(summary)
+    #generate_audio(summary)
     print("Audio generated.....")
 
     print("Step 6: Generate video")
     audio_fileName = "audio.mp4"
-    stitch_video(phrase_list, max_number_of_phrases, audio_fileName)
+    stitch_video(phrase_list, max_number_of_phrases, audio_fileName, summary)
     print("Video generated.....")
 
 if __name__ == "__main__":
