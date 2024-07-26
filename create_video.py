@@ -466,7 +466,7 @@ def create_video(images, audio, output, image_phrases, summary):
     print(texts)
     for i, (m, text) in enumerate(zip(images, texts)):
         # Create an image clip
-        img_clip = ImageClip(m).resize(height=1024).set_duration(3).set_fps(30)
+        img_clip = ImageClip(m).resize(height=1024).set_duration(2.95).set_fps(30)
         
         # Create a text clip (customize as needed)
         #txt_clip = TextClip(text, fontsize=70, color='white', font="Amiri-Bold", align='center').set_position('center').set_duration(4)
@@ -479,7 +479,7 @@ def create_video(images, audio, output, image_phrases, summary):
         wrapped_text = "\n".join(wrapped_text_lines)
 
         # Create a more attractive text clip
-        txt_clip = (TextClip(wrapped_text, fontsize=40, color='white', font="Roboto-Condensed", align='center', stroke_color='black', stroke_width=2)
+        txt_clip = (TextClip(wrapped_text, fontsize=50, color='white', font="Roboto-Condensed", align='center', stroke_color='black', stroke_width=1)
                     .set_position(('center', 'center'))
                     .set_duration(2)
                     .margin(bottom=20, opacity=0)  # Add some bottom margin
@@ -528,34 +528,34 @@ def main():
     print("Step 1: Generate the content")
     content = ""
     #Topics: Question, Books, Movies, Music, Health, Technology, Science, History, Art, Food, Travel, Research papers
-    #content = generate_content("Importance of sleep", 5)
+    content = generate_content("Microsoft Autogen", 5)
     print("Content:", content)
 
     print("Step 2: Summarize the content")
     num_of_sentences = 3
     summary = "Hey there! You won't believe how amazing sleep can be for us. It's like a superhero, keeping our heart, blood vessels, and brain in tip-top shape, and even helping us maintain a healthy weight. But beware, if we skimp on it, it can cause stress and anxiety, reduce our productivity and even put our safety at risk! So, let's make sure we're getting the sleep we need to stay on top of our game."
-    #summary = summarize_content(content, num_of_sentences)
+    summary = summarize_content(content, num_of_sentences)
     print("Summary:", summary)
 
     print("Step 3: Extract key phrases")
     phrase_list = ['Manokamana Siddhi', 'fascinating concept', 'Hindu spirituality', 'personal wishes', 'sincere worship', 'spiritual pr actices', 'mantra chanting', 'beautiful belief', 'little bit', 'divine grace', 'selfless desires', 'fulfillment', 'meditation', 'fa ith', 'self-improvement', 'pursuit', 'positive', 'principles', 'Karma', 'mind', 'reality']
     phrases = ""
-    #phrase_list, phrases = extract_key_phrases(summary)
+    phrase_list, phrases = extract_key_phrases(summary)
     print("Key Phrases:", phrase_list)
     print("Phrases:", phrases)
 
     print("Step 4a: Generate images")
-    max_number_of_phrases = 11
-    #generate_images(phrase_list, max_number_of_phrases)
+    max_number_of_phrases = 15
+    generate_images(phrase_list, max_number_of_phrases)
     print("Images generated.....")
 
     print("Step 4b: Fetch and Prepare images")
-    max_number_of_phrases = 11
+    max_number_of_phrases = 15
     #fetch_and_prepare_images(phrases, max_number_of_phrases)
     print("Images prepared.....")
 
     print("Step 5: Generate audio")
-    #generate_audio(summary)
+    generate_audio(summary)
     print("Audio generated.....")
 
     print("Step 6: Generate video")
