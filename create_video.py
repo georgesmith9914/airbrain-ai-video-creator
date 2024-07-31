@@ -528,7 +528,7 @@ def main():
     print("Step 1: Generate the content")
     content = ""
     #Topics: Question, Books, Movies, Music, Health, Technology, Science, History, Art, Food, Travel, Research papers
-    content = generate_content("Microsoft Autogen", 5)
+    content = generate_content("HuggingFace AI", 5)
     print("Content:", content)
 
     print("Step 2: Summarize the content")

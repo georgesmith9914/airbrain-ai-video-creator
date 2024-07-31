@@ -6,6 +6,9 @@ old-images-4
 audio.mp4
 text-video.ipynb
 video.mp4
+*.mp3
+*.mp4
+*.png
 .env
 __pycache__/
 prepare_images

@@ -4,4 +4,6 @@ moviepy
 azure.ai.textanalytics
 azure.core
 azure-cognitiveservices-speech
-PIL
+pillow
+opencv-python
+streamlit
